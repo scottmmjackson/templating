@@ -16,40 +16,216 @@
 
 ## [Introduction](aurelia-doc://section/1/version/1.0.0)
 
-Aurelia's powerful templating system can seem daunting in its simplicity. This article will walk you through the
-construction of a static template, importing that template into parent templates, binding and manipulating data through
-the view-model, and the use of conditionals, repeaters, and events.
+Aurelia's templating system is simple to learn, and yet powerful enough to build even the most complex applications.
+This article will walk you through the construction of a static template, importing that template into parent
+templates, binding and manipulating data through the view-model, and the use of conditionals, repeaters, and events.
 
-## [The Static Template](aurelia-doc://section/2/version/1.0.0)
+## [A Simple Template](aurelia-doc://section/2/version/1.0.0)
 
-The core of an Aurelia custom element is the template HTML file. All Aurelia custom elements are composed at least
-of HTML wrapped in a `<template>` element, but may also include an explicit view-model definition, which we'll discuss
-later.
+All Aurelia templates must be wrapped with a `<template>` element. The most basic template is a component that prints
+"Hello World":
 
-The most basic template is a component that prints "Hello World":
-
-<code-listing heading="hello-template.html">
+<code-listing heading="hello-world.html">
   <source-code lang="HTML">
     <template>
-      <div>
+      <p>
     	  Hello, World!
-      </div>
+      </p>
     </template>
   </source-code>
 </code-listing>
 
-This template can be imported into an Aurelia application, or consumed in another template. A static template has its
-uses: a boilerplate footer containing copyright information or disclaimers, but for many of our purposes, we'll want
-to involve some more dynamic features, such as repeaters, conditionals, event handlers, and data binding.
+This template could be a page in an Aurelia application, or it could be the view for a custom element. A template
+containing only boilerplate could be useful as a footer containing copyright information or disclaimers, but where's
+the fun in a static template?
 
-## [Imports](aurelia-doc://section/3/version/1.0.0)
+All Aurelia templates work with a view-model, so let's create one:
 
-There are two ways to consume templates, depending on whether they're pure HTML templates, or HTML with a script engine
-view-model.
+<code-listing heading="hello${context.language.fileExtension}">
+  <source-code lang="ES2015/ES2016/TypeScript">
+    export class Hello {
+      constructor() {
+        this.name = 'John Doe';
+      }
+    }
+  </source-code>
+</code-listing>
+
+Let's bind the `name` property in our view-model into our template using Aurelia's string interpolation:
+
+<code-listing heading="hello.html">
+  <source-code lang="HTML">
+    <template>
+      <p>
+    	  Hello, ${name}!
+      </p>
+    </template>
+  </source-code>
+</code-listing>
+
+One of the key features of Aurelia's templating system is helping to reduce context switching between your javascript
+code and your template markup. String interpolation using the `${}` operator is a new feature in ES2015 that makes it
+ simple to insert values into a string. Thus, Aurelia uses this standard syntax in your templates.
+
+When this template is run, Aurelia will insert the value of the `name` property into the template where `${name}`
+appears. Pretty simple, right? But what if we want logic in our string interpolation. Can we add our own expressions?
+ Absolutely!
+
+<code-listing heading="greeter.html">
+  <source-code lang="HTML">
+    <template>
+      <p>
+    	  ${arriving ? 'Hello' : 'Goodbye'}, ${name}!
+      </p>
+    </template>
+  </source-code>
+</code-listing>
+
+<code-listing heading="greeter${context.language.fileExtension}">
+  <source-code lang="ES2015/ES2016/TypeScript">
+    export class Greeter {
+      constructor() {
+        this.name = 'John Doe';
+        this.arriving = true;
+        setTimeout(
+          () => this.arriving = false,
+          5000);
+      }
+    }
+  </source-code>
+</code-listing>
+
+In our template, when `arriving` is true, the ternary operator makes our result `'Hello'`, but when it's false, it
+makes our result `'Goodbye'`. Our view-model code initializes `arriving` to `true` and changes it to `false` after 5
+seconds (5000 milliseconds). So when we run the template, it will say "Hello, John Doe!" and after 5 seconds, it will
+ say "Goodbye, John Doe!". Aurelia re-evaluates the string interpolation when the value of `arriving` changes!
+
+But don't worry, there is no dirty-checking. Aurelia uses an observable-based binding system that reacts to changes
+as they happen without having to do dirty-checking. This means that Aurelia doesn't slow down as you add more complex
+ functionality to your template and view-model.
+
+## [Binding](aurelia-doc://section/4/version/1.0.0)
+
+Binding in Aurelia allows data from the view-model to drive template behavior. The most basic example of binding
+is linking a text box to the view model using `value.bind`. What if we let the user decide who they want to greet,
+and whether to say Hello or Goodbye?
+
+<code-listing heading="greeter.html">
+  <source-code lang="HTML">
+    <template>
+      <label for="nameField">
+        Who to greet?
+      </label>
+      <input type="text" value.bind="name" id="nameField">
+      <label for="arrivingBox">
+        Arriving?
+      </label>
+      <input type="checkbox" checked.bind="arriving" id="arrivingBox">
+      <p>
+    	  ${arriving ? 'Hello' : 'Goodbye'}, ${name}!
+      </p>
+    </template>
+  </source-code>
+</code-listing>
+
+<code-listing heading="greeter${context.language.fileExtension}">
+  <source-code lang="ES2015/ES2016/TypeScript">
+    export class Greeter {
+      constructor() {
+        this.name = 'John Doe';
+        this.arriving = true;
+      }
+    }
+  </source-code>
+</code-listing>
+
+Above, we have a text box that asks for the name of the person to greet, and a checkbox indicating whether they're
+arriving. Because we defined `name` as "John Doe" in our view-model, the initial value of the text-box will be "John
+Doe", and with `arriving` set to `true`, our checkbox will start checked. When we change the name, the person we're
+greeting will change with it: "Hello, Jane Doe!". If we uncheck the box, the greeting will change: "Goodbye, Jane Doe!"
+
+Notice that the way we set up the binding was by using `value.bind` and `checked.bind`. That `.` within the attribute
+ is important: whenever you see the `.`, Aurelia is going to do something with that attribute. The most important
+ thing to take away from this section is understanding that Aurelia will link attributes to the left of the `.` with
+ actions to the right of the `.`.
+
+Here, we have used the `bind` command to bind the text box `value` attribute to the `name` property, and the
+checkbox's `checked` attribute to the `arriving` property. The `bind` command will use the default binding direction,
+ which is determined by Aurelia's convention for the attribute and element it's acting on. Simply put, the convention
+  is this:
+
+1. Can the user update it? It's a two-way binding.
+
+   Examples: Form elements, and the text content of elements with `content-editable` set to true.
+
+2. Is it anything else? It's a one-way binding.
+
+But what if we want to be explicit about our binding direction?
+
+### One-way, Two-way, and One-time Binding
+
+Sometimes, we will want data to be solely initialized from the view-model using `one-time`. Other times, we may want
+changes in the template to drive changes in the view-model, but not the other way around, using `one-way`. If we want
+ the template and the view-model to be kept in sync like we saw previously, we want to use `two-way`.
+
+<code-listing heading="bind-directions.html">
+  <source-code lang="HTML">
+    <template>
+      <p>
+        <input type="text" value.one-way="name" />
+      </p>
+      <p>
+        <input type="text" value.two-way="name" />
+      </p>
+      <p>
+        <input type="text" value.one-time="name" />
+      </p>
+    </template>
+  </source-code>
+</code-listing>
+
+<code-listing heading="bind-directions${context.language.fileExtension}">
+  <source-code lang="ES2015/ES2016/TypeScript">
+    export class Hello {
+      constructor() {
+        this.name = 'John Doe';
+      }
+
+    }
+  </source-code>
+</code-listing>
+
+We have three text boxes that we bind to `name` in different ways. They all start out set to `John Doe`. If we edit
+the first, `one-way` bound field, nothing changes. If we edit the second, `two-way` bound field only the first field
+changes with it. If we edit the third, `one-time` bound field, nothing else changes.
+
+What's happening here?
+
+1. In the `one-way` bound field, the field is only a **receiver** of changes from the view-model. Changes in the
+`one-way` field don't affect the value of `name`, but changes in `name` affect the `value` property of the field.
+
+2. In the `two-way` bound field, the field and the view-model are kept in sync. Changes in the `two-way` field update
+ the value of `name`, and changes in `name` affect the field's `value` property as well.
+
+3. In the `one-time` bound field, the field is filled with the initial value of `name` from the view-model only.
+Changes in the value of `name` in the view model don't affect the `value` property of the field, and changes in the
+field don't affect the value of `name`.
+
+Here's an easy way to remember it: `two-way` is synced, `one-way` only receives, and `one-time` only initializes.
+
+Binding seems like a pretty useful way to connect our view-model to our template markup, but in a large application,
+we want to be able to use the same template multiple times with different data. How do we do that?
+
+## [Importing Templates as Custom Elements](aurelia-doc://section/3/version/1.0.0)
+
+The templates we've made so far can also be called "Custom Elements", because when we import them into other
+templates, they will take the form of an element in the markup. The first thing to do is to use the `<require>`
+element to tell Aurelia where to look for our custom element's definition. Then, the custom element can be inserted
+into the template as if it were any other HTML tag!
 
 Here's a pure HTML example:
 
-<code-listing heading="consuming-hello-template.html">
+<code-listing heading="importing-hello-template.html">
   <source-code lang="HTML">
     <template>
       <require from="./hello-template.html"></require>
@@ -71,14 +247,11 @@ This is as simple as it gets. We require the html file, and we consume it with a
   </source-code>
 </code-listing>
 <code-listing heading="hello-vm-template${context.language.fileExtension}">
-  <source-code lang="ES2015/ES2016">
+  <source-code lang="ES2015/ES2016/TypeScript">
   export class HelloDynamicTemplate {
-    greeting = "Hello, World!"
-  }
-  </source-code>
-  <source-code lang="TypeScript">
-  export class HelloDynamicTemplate {
-    greeting = "Hello, World!"
+    constructor() {
+      this.greeting = "Hello, World!"
+    }
   }
   </source-code>
 </code-listing>
@@ -94,174 +267,18 @@ In this case, we would import our template without the `.html` extension:
   </source-code>
 </code-listing>
 
-In this case, we're consuming the HTML file, but we're also consuming its view-model definition. Remember to only add
-the `.html` extension when you're using a custom element that's only an HTML template.
-
-## [Binding](aurelia-doc://section/4/version/1.0.0)
-
-Binding in Aurelia allows data from the script engine to drive template behavior. The most basic example of binding
-is linking a text box to the view model using `value.bind`, and displaying the bound data using string interpolation,
- the `${}` operator:
-
-
-<code-listing heading="bind-template.html">
-  <source-code lang="HTML">
-    <template>
-        <label for="name">
-          Name:
-        </label>
-        <input type="text" value.bind="myName" id="name" />
-        <button click.delegate="capitalizeIt()">
-          Capitalize It!
-        </button>
-        <br />
-        <p>
-          Hi, my name is ${myName}!
-        </p
-      </form>
-    </template>
-  </source-code>
-</code-listing>
-
-<code-listing heading="bind-template${context.language.fileExtension}">
-  <source-code lang="ES2015/ES2016">
-    export class BindTemplate {
-	name = 'Dana Lee';
-
-	capitalizeName() {
-	  this.myName = this.myName.toUpperCase();;
-}
-    }
-  </source-code>
-  <source-code lang="Typescript">
-    export class BindTemplate {
-        name = 'Dana Lee';
-
-	capitalizeName() {
-	  this.myName = this.myName.toUpperCase();
-	}
-    }
-  </source-code>
-</code-listing>
-
-In this example, the value of the text field is **two-way bound** to `BindTemplate.name`. That means that upon
-altering the value of `name`, and the contents of the text field are kept in sync and vice versa. Because we've hooked
-up the capitalize function, we can call that function, which alters the value of `name` and changes the value of the
-`<input>` field to the uppercase version of itself.
-
-### One-way, Two-way, and One-time Binding
-
-We don't always want to keep a field in sync with our model. Sometimes, we will want data to be solely initialized
-from the view-model using `one-time`. Other times, we may want changes in the template to drive changes in the
-view-model, but not the other way around, using `one-way`. If we want the template and the view-model to be kept in
-sync like we saw previously, we want to use `two-way`. Using `bind` picks the default binding behavior for the
-element, which is often `two-way`.
-
-<code-listing heading="bind-directions.html">
-  <source-code lang="HTML">
-    <template>
-      <p>
-        <button click.delegate="capitalizeOnce()">
-          Capitalize Me!
-        </button>
-        <input type="text" value.one-time="once" />
-        ${once}
-      </p>
-      <p>
-        <button click.delegate="capitalizeSender()">
-          Capitalize Me!
-        </button>
-        <input type="text" value.one-way="sender" />
-        ${sender}
-      </p>
-      <p>
-        <button click.delegate="capitalizeCommunicator()">
-          Capitalize Me!
-        </button>
-        <input type="text" value.two-way="communicator" />
-        ${communicator}
-      </p>
-    </template>
-  </source-code>
-</code-listing>
-
-<code-listing heading="bind-directions${context.language.fileExtension}">
-  <source-code lang="ES2015/ES2016">
-    export class BindDirections {
-      once = 'First';
-      sender = 'Second';
-      communicator = 'Third';
-
-      capitalizeOnce() {
-        this.once = this.once.toUpperCase();
-      }
-
-      capitalizeSender() {
-        this.sender = this.sender.toUpperCase();
-      }
-
-      capitalizeCommunicator() {
-        this.communicator = this.communicator.toUpperCase();
-      }
-
-    }
-  </source-code>
-  <source-code lang="TypeScript">
-    export class BindDirections {
-      once = 'First';
-      sender = 'Second';
-      communicator = 'Third';
-
-      capitalizeOnce() {
-        this.once = this.once.toUpperCase();
-      }
-
-      capitalizeSender() {
-        this.sender = this.sender.toUpperCase();
-      }
-
-      capitalizeCommunicator() {
-        this.communicator = this.communicator.toUpperCase();
-      }
-
-    }
-  </source-code>
-</code-listing>
-
-Each of the checkboxes triggers the functions they're bound to when checked. Much like the `capitalizeName` function
-above, they convert the bound data to upper-case. However, because the binding strategies are different, we get
-different results:
-
-1. When the first one-time bound text field is altered, `once` doesn't change. When the box is checked, `once` becomes
-   "FIRST", all upper-case, but the text field doesn't change.
-
-1. When the second one-way bound text field is altered, `sender` changes. When the box is checked, `sender` becomes
-   the all-caps value of the text field, but the text field doesn't change. Thus, the one-way bound text field is a
-   sender, but not a receiver.
-
-1. When the third two-way bound text field is altered, `communicator` changes. When the box is checked, `communicator`
-   becomes the all-caps value of the text field, and the text field is updated to reflect that change. Thus, the
-   two-way bound text field is both a sender and a receiver.
-
-In this case, if we had used `.bind` it would have defaulted to two-way binding. However, depending on the nature of
-the action, Aurelia will infer the binding type from the context: the property and element on which the `bind` call
-is made.
-
-What if I want something that is only a receiver and not a sender? Most times, this can be achieved by using the
-string  interpolation operator: `${}`. For example, in the above code, we're using string interpolation to inspect the
-values of `once`, `sender`, and `communicator`. Those interpolated strings won't have any effect on the values of
-those variables.
+Remember to only add the `.html` extension when you're using a custom element that's only an HTML template.
 
 ### Binding to a Custom Element
 
-Aurelia can also export and import its own bindables. This is done differently depending on whether or not the template
-is pure HTML, or if it contains view-model code. If the template is pure HTML, we use the `bindable` property in the
-`template` tag. If the template has view-model code, we have to import the `bindable` decorator from the
-`aurelia-framework` package.
+We can also define our own properties on custom elements, and use them to bind data *into* the template.
+
+If the template is pure HTML, we use the `bindable` property in the `template` tag. If the template has view-model
+code, we have to import the `bindable` decorator from the `aurelia-framework` package.
 
 First, the pure HTML version:
 
-<code-listing heading="bindable-template.html">
+<code-listing heading="bindable.html">
   <source-code lang="HTML">
     <template bindable="greeting, whom">
       <div>
@@ -271,21 +288,33 @@ First, the pure HTML version:
   </source-code>
 </code-listing>
 
-<code-listing heading="binding-template.html">
+<code-listing heading="binding.html">
   <source-code lang="HTML">
     <template>
-      <require from="./bindable-template.html"></require>
-      <input type="text" value.bind="greetMessage" />
-      <input type="text" value.bind="whomMessage" />
-      <bindable-template greeting.bind="greetMessage" whom.bind="whomMessage">
+      <require from="./bindable.html"></require>
+      <input type="text" value.bind="greetMessage" placeholder="Goodbye" />
+      <input type="text" value.bind="whomMessage" placeholder="Frank" />
+      <bindable greeting.bind="greetMessage" whom.bind="whomMessage"></bindable>
+      <bindable greeting="Hello" whom="Yao Ming"></bindable>
+      <bindable></bindable>
     </template>
   </source-code>
 </code-listing>
 
-In this example, the `bindable-template` sets the `bindable` property and declares which variables can be bound by its
-parent template. In this case, it allows its parent to set `greeting`, and `whom`.
+In this example, we have three copies of the same custom element that do different things to the bindable template:
 
-Now, the version using a dynamic template with its own view-model:
+1. The first binds data from the text boxes in `binding.html`. Because those fields are initialized to "Goodbye" and
+"Frank", our first message is "Goodbye, Frank!"
+
+2. The second sets the attributes directly without using Aurelia's binding behavior, and gives us a fixed greeting to
+ our favorite basketball player.
+
+3. The third leaves the attributes undefined. Our string interpolation `${}` uses the "OR" operator `||` to set a
+default message if the attributes are undefined. When we say `${greeting || "Hello"}`, we mean "Use the value of
+`greeting` unless it's undefined, in which case use the string 'Hello'." So our result is "Hello, World!"
+
+Custom elements with a view-model defined look slightly different: instead of defining the `bindable` property, we
+use the `bindable` decorator, as shown below.
 
 <code-listing heading="bindable-dynamic-template.html">
   <source-code lang="HTML">
@@ -325,7 +354,8 @@ Now, the version using a dynamic template with its own view-model:
   </source-code>
 </code-listing>
 
-Here, the view-model declares `greeting` and `whom` as bindable. These two versions are equivalent.
+Here, the view-model declares `greeting` and `whom` as bindable. This has the same effect as defining `bindable` in
+the template markup, except when we define a view-model, the use of the `bindable` decorator is **mandatory**.
 
 As long as the inputs are blank, it displays "Hello, World!", but if we change our first field to "Goodbye", the
 message is now "Goodbye, World!" That's too dark for this tutorial, so let's see off our friend Frank instead by

@@ -162,7 +162,7 @@ checkbox's `checked` attribute to the `arriving` property. The `bind` command wi
 
 But what if we want to be explicit about our binding direction?
 
-### One-way, Two-way, and One-time Binding
+### Explicit One-way, Two-way, and One-time Binding
 
 Sometimes, we will want data to be solely initialized from the view-model using `one-time`. Other times, we may want
 changes in the template to drive changes in the view-model, but not the other way around, using `one-way`. If we want
@@ -225,11 +225,11 @@ into the template as if it were any other HTML tag!
 
 Here's a pure HTML example:
 
-<code-listing heading="importing-hello-template.html">
+<code-listing heading="importing-hello.html">
   <source-code lang="HTML">
     <template>
-      <require from="./hello-template.html"></require>
-      <hello-template></hello-template>
+      <require from="./say-hello.html"></require>
+      <say-hello></say-hello>
     </template>
   </source-code>
 </code-listing>
@@ -237,7 +237,7 @@ Here's a pure HTML example:
 This is as simple as it gets. We require the html file, and we consume it with a tag whose name is the name of the file.
  However, our "Hello World" could also be a combination of HTML and view-model code:
 
-<code-listing heading="hello-vm-template.html">
+<code-listing heading="say-hello-vm.html">
   <source-code lang="HTML">
     <template>
       <div>
@@ -246,9 +246,9 @@ This is as simple as it gets. We require the html file, and we consume it with a
     </template>
   </source-code>
 </code-listing>
-<code-listing heading="hello-vm-template${context.language.fileExtension}">
+<code-listing heading="say-hello-vm${context.language.fileExtension}">
   <source-code lang="ES2015/ES2016/TypeScript">
-  export class HelloDynamicTemplate {
+  export class SayHello {
     constructor() {
       this.greeting = "Hello, World!"
     }
@@ -258,11 +258,11 @@ This is as simple as it gets. We require the html file, and we consume it with a
 
 In this case, we would import our template without the `.html` extension:
 
-<code-listing heading="consuming-hello-vm-template.html">
+<code-listing heading="importing-hello-vm.html">
   <source-code lang="HTML">
     <template>
-      <require from="./hello-template"></require>
-      <hello-template></hello-template>
+      <require from="./say-hello"></require>
+      <say-hello></say-hello>
     </template>
   </source-code>
 </code-listing>
@@ -278,7 +278,7 @@ code, we have to import the `bindable` decorator from the `aurelia-framework` pa
 
 First, the pure HTML version:
 
-<code-listing heading="bindable.html">
+<code-listing heading="say-hello.html">
   <source-code lang="HTML">
     <template bindable="greeting, whom">
       <div>
@@ -291,20 +291,20 @@ First, the pure HTML version:
 <code-listing heading="binding.html">
   <source-code lang="HTML">
     <template>
-      <require from="./bindable.html"></require>
-      <input type="text" value.bind="greetMessage" placeholder="Goodbye" />
-      <input type="text" value.bind="whomMessage" placeholder="Frank" />
-      <bindable greeting.bind="greetMessage" whom.bind="whomMessage"></bindable>
-      <bindable greeting="Hello" whom="Yao Ming"></bindable>
-      <bindable></bindable>
+      <require from="./say-hello.html"></require>
+      <input type="text" value.bind="greetMessage" />
+      <input type="text" value.bind="whomMessage" />
+      <say-hello greeting.bind="greetMessage" whom.bind="whomMessage"></say-hello>
+      <say-hello greeting="Hello" whom="Yao Ming"></say-hello>
+      <say-hello></say-hello>
     </template>
   </source-code>
 </code-listing>
 
 In this example, we have three copies of the same custom element that do different things to the bindable template:
 
-1. The first binds data from the text boxes in `binding.html`. Because those fields are initialized to "Goodbye" and
-"Frank", our first message is "Goodbye, Frank!"
+1. The first binds data from the text boxes in `binding.html`. Our default message is "Hello, World!", but changing
+the input fields will update the message based on the content of our textboxes.
 
 2. The second sets the attributes directly without using Aurelia's binding behavior, and gives us a fixed greeting to
  our favorite basketball player.
@@ -316,7 +316,7 @@ default message if the attributes are undefined. When we say `${greeting || "Hel
 Custom elements with a view-model defined look slightly different: instead of defining the `bindable` property, we
 use the `bindable` decorator, as shown below.
 
-<code-listing heading="bindable-dynamic-template.html">
+<code-listing heading="say-hello.html">
   <source-code lang="HTML">
     <template>
       <div>
@@ -326,17 +326,11 @@ use the `bindable` decorator, as shown below.
   </source-code>
 </code-listing>
 
-<code-listing heading="bindable-dynamic-template${context.language.fileExtension}">
-  <source-code lang="ES2015/ES2016">
+<code-listing heading="say-hello${context.language.fileExtension}">
+  <source-code lang="ES2015/ES2016/TypeScript">
   import {bindable} from 'aurelia-framework';
 
-  export class BindableDynamicTemplate {
-    @bindable greeting;
-    @bindable whom;
-  }
-  </source-code>
-  <source-code lang="TypeScript">
-  export class BindableDynamicTemplate {
+  export class SayHello {
     @bindable greeting;
     @bindable whom;
   }
@@ -349,7 +343,7 @@ use the `bindable` decorator, as shown below.
       <require from="bindable-dynamic-template"></require>
       <input type="text" value.bind="greetMessage" />
       <input type="text" value.bind="whomMessage" />
-      <bindable-template greeting.bind="greetMessage" whom.bind="whomMessage">
+      <say-hello greeting.bind="greetMessage" whom.bind="whomMessage">
     </template>
   </source-code>
 </code-listing>

@@ -618,5 +618,3 @@ page down considerably, so the general guidance is to use `.delegate` unless you
 
 In the above example, `leanEventHandler` and `expensiveEventHandler` both do nothing. However,
 `expensiveEventHandler` will be more expensive, because the handler is being attached with `.trigger`.
-
-Another
